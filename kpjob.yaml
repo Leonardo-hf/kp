@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kp
+spec:
+  template:
+    spec:
+      containers:
+        - name: kp
+          image: applerodite/kp:latest
+          env:
+            - name: Datasets
+              value: "/datasets/github.json"
+            - name: Addr
+              value: "kafka.kafka:9092"
+            - name: Topic
+              value: "topic_github"
+            - name: CInterval
+              value: 86400
+            - name: PInterval
+              value: 600
+      restartPolicy: Never
+  backoffLimit: 1
