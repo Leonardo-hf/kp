@@ -175,6 +175,7 @@ func main() {
 				log.Fatalf("failed to write msg, err: %v", err)
 			}
 		}
+		log.Printf("[KP] producing msg at %v.", next)
 		if idx >= len(origins) {
 			ticker.Stop()
 			break
