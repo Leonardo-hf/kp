@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -145,7 +144,6 @@ func main() {
 		AllowAutoTopicCreation: true,
 	}
 	defer func() { _ = conn.Close() }()
-	fmt.Println(c.Datasets)
 	origins := GetGithubInfos(c.Datasets)
 	if !c.NotSleep {
 		// 等待到整点开始执行
@@ -173,7 +171,7 @@ func main() {
 				context.Background(),
 				kafka.Message{Value: m},
 			)
-			if err != nil {
+			if err != nil && err != kafka.UnknownTopicOrPartition {
 				log.Fatalf("failed to write msg, err: %v", err)
 			}
 		}
