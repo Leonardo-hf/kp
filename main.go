@@ -81,6 +81,9 @@ func Origin2Msg(o *OriginGithubInfo) []byte {
 			v = strings.ReplaceAll(v, "^", "")
 			v = strings.ReplaceAll(v, "x", "0")
 			v = strings.ReplaceAll(v, " ", "")
+			if v == "" {
+				v = "latest"
+			}
 			deps = append(deps, &msg.Dependency{
 				Package: k,
 				Version: v,
@@ -142,6 +145,7 @@ func main() {
 		Addr:                   kafka.TCP(c.Addr),
 		Topic:                  c.Topic,
 		AllowAutoTopicCreation: true,
+		Async:                  true,
 	}
 	defer func() { _ = conn.Close() }()
 	origins := GetGithubInfos(c.Datasets)
@@ -161,18 +165,22 @@ func main() {
 	for range ticker.C {
 		next := initTime.Add(time.Duration(c.CInterval) * time.Second)
 		initTime = next
+		msgs := make([]kafka.Message, 0)
 		for {
 			if idx >= len(origins) || origins[idx].Timestamp.After(next) {
 				break
 			}
-			idx++
 			m := Origin2Msg(origins[idx])
+			idx++
+			msgs = append(msgs, kafka.Message{Value: m})
+		}
+		if len(msgs) > 0 {
 			err := conn.WriteMessages(
 				context.Background(),
-				kafka.Message{Value: m},
+				msgs...,
 			)
 			if err != nil && err != kafka.UnknownTopicOrPartition {
-				log.Fatalf("failed to write msg, err: %v", err)
+				log.Printf("[KP] failed to write msg, err: %v", err)
 			}
 		}
 		log.Printf("[KP] producing msg at %v.", next)
